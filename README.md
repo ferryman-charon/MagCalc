@@ -9,8 +9,8 @@ Initial Role assignement:
 - Sebi: Visualisation
 
 # Progress:
-08.09.2025:
+# # 08.09.2025:
 - Luggi: Create and plot random Vectorfield
 - Sebi: Started Monte-Carlo and random Pixel Swap
-09.09.2025:
+# # 09.09.2025:
 - Luggi: Started Model for Energy Calculation

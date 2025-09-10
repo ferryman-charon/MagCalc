@@ -7,3 +7,10 @@ Initial Role assignement:
 - Luggi: Array and plot in Python
 - Max: Monte-Carlo, Ising Modell
 - Sebi: Visualisation
+
+# Progress:
+08.09.2025:
+- Luggi: Create and plot random Vectorfield
+- Sebi: Started Monte-Carlo and random Pixel Swap
+09.09.2025:
+- Luggi: Started Model for Energy Calculation

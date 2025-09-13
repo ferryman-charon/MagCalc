@@ -17,8 +17,11 @@
 
 #define COLOR_BLACK (SDL_Color){0,0,0,255}
 #define COLOR_WHITE (SDL_Color){255,255,255,255}
-#define COLOR_RED (SDL_Color){255,0,0,255}
+#define COLOR_BLUE (SDL_Color){0,0,255,255}
 
-#define NUM_COLOR_FUNC 3
+#define CELL_SIZE 20
+
+#define SDL_COLOR_TO_ARGB32(col) \
+    ( ((Uint32)(col).a << 24) | ((Uint32)(col).r << 16) | ((Uint32)(col).g << 8) | ((Uint32)(col).b) )
 
 #endif

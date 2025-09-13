@@ -9,8 +9,9 @@ struct Game {
         SDL_Renderer *renderer;
         SDL_Texture *out_screen;
         SDL_Event event;
+        uint32_t pixels;
         bool is_running;
-        uint32_t *pixels;
+        bool *molecule_grid;
 };
 
 bool game_new(struct Game **game);

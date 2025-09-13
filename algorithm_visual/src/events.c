@@ -13,7 +13,10 @@ void game_events(struct Game *g) {
                         g->is_running = false;
                         break;
                     case SDL_SCANCODE_SPACE:
-                        init_grid(g->molecule_grid);
+                        update_grid(g->molecule_grid);
+                        break;
+                    case SDL_SCANCODE_R:
+                        grid_reset_values(g->molecule_grid);
                         break;
                     default:
                         break;

@@ -6,9 +6,17 @@
 #define GRID_WIDTH (WINDOW_WIDTH / CELL_SIZE)
 #define GRID_HEIGHT (WINDOW_HEIGHT / CELL_SIZE)
 
-#define GRID_SIZE (GRID_WIDTH * GRID_HEIGHT)
 
-void init_grid(bool *grid);
-void update_grid(bool *grid);
+typedef struct {
+    size_t h, w, size;
+    double Temperature, mu, J, energy;
+    bool *grid, *seen;
+} Molecules;
+
+bool grid_new(Molecules **molecules);
+void grid_free(Molecules **molecules);
+void grid_reset_values(Molecules *m);
+
+void update_grid(Molecules *m);
 
 #endif

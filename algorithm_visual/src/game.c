@@ -1,6 +1,5 @@
 #include "game.h"
 #include "events.h"
-#include "draw_molecules.h"
 
 void game_render_colors(struct Game *g);
 void game_events(struct Game *g);
@@ -54,22 +53,10 @@ bool game_new(struct Game **game) {
         return false;
     }
 
-    g->molecule_grid = calloc(GRID_HEIGHT*GRID_WIDTH, sizeof(bool));
-    if (!g->molecule_grid) {
-        free(g);
-        *game = NULL;
-        fprintf(stderr, "Error allocating memory for calc grid: %s\n", SDL_GetError());
+    if (!grid_new(&g->molecule_grid)){
         return false;
     }
 
-    g->pixels = calloc(WINDOW_WIDTH * WINDOW_HEIGHT, sizeof(uint32_t));
-    if (!g->molecule_grid) {
-        free(g);
-        *game = NULL;
-        fprintf(stderr, "Error allocating memory for calc grid: %s\n", SDL_GetError());
-        return false;
-    }
-    
     g->out_screen = SDL_CreateTexture(g->renderer,
         SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
         WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -90,15 +77,8 @@ void game_free(struct Game **game) {
             SDL_DestroyTexture(g->out_screen);
             g->out_screen = NULL;
         }
-
-        if (g->pixels) {
-            free(g->pixels);
-            g->pixels =NULL;
-        }
-
         if (g->molecule_grid) {
-            free(g->molecule_grid);
-            g->molecule_grid = NULL;
+            grid_free(&g->molecule_grid);
         }
         
         if (g->renderer) {
@@ -118,20 +98,42 @@ void game_free(struct Game **game) {
     }
 }
 
-void game_draw_grid(struct Game *g) {
+bool game_draw_grid(struct Game *g) {
+    if (CELL_SIZE == 1) {
 
-    SDL_SetRenderDrawColor(g->renderer, COLOR_WHITE.r, COLOR_WHITE.g, COLOR_WHITE.b, COLOR_WHITE.a);
-    SDL_RenderClear(g->renderer);
+        // eigentlich unnötig aber ja
+        uint32_t BLUE =  SDL_COLOR_TO_ARGB32(COLOR_BLUE);
+        uint32_t WHITE =  SDL_COLOR_TO_ARGB32(COLOR_WHITE);
 
-    SDL_SetRenderDrawColor(g->renderer, COLOR_BLUE.r, COLOR_BLUE.g, COLOR_BLUE.b, COLOR_BLUE.a);
-    for (int y = 0; y < GRID_HEIGHT; y++) {
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            if (g->molecule_grid[y*GRID_WIDTH + x]) {
-                const SDL_FRect rect = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-                SDL_RenderFillRect(g->renderer, &rect);
+        for (size_t i = 0; i < g->molecule_grid->size; i++) {
+            g->pixels[i] = g->molecule_grid->grid[i] ? BLUE : WHITE; 
+        }
+        if (!SDL_UpdateTexture(g->out_screen, NULL, g->pixels, PITCH)) {
+            fprintf(stderr, "Error updating texture: %s\n", SDL_GetError());
+            return 0;
+        }   
+
+        if (!SDL_RenderTexture(g->renderer, g->out_screen, NULL, NULL)) {
+            fprintf(stderr, "Error rendering texture: %s\n", SDL_GetError());
+            return 0;
+        }
+
+    } else {
+        SDL_SetRenderDrawColor(g->renderer, COLOR_WHITE.r, COLOR_WHITE.g, COLOR_WHITE.b, COLOR_WHITE.a);
+        SDL_RenderClear(g->renderer);
+
+        SDL_SetRenderDrawColor(g->renderer, COLOR_BLUE.r, COLOR_BLUE.g, COLOR_BLUE.b, COLOR_BLUE.a);
+        for (int y = 0; y < GRID_HEIGHT; y++) {
+            for (int x = 0; x < GRID_WIDTH; x++) {
+                if (g->molecule_grid->grid[y*GRID_WIDTH + x]) {
+                    const SDL_FRect rect = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
+                    SDL_RenderFillRect(g->renderer, &rect);
+                }
             }
         }
-    }
+    }   
+
+    return true;
 }
 
 bool game_draw(struct Game *g) {
@@ -141,7 +143,7 @@ bool game_draw(struct Game *g) {
         return 0;
     }
     
-    update_grid(g->molecule_grid);
+    //update_grid(g->molecule_grid);
     game_draw_grid(g);
     
     if (!SDL_RenderPresent(g->renderer)) {
@@ -152,25 +154,17 @@ bool game_draw(struct Game *g) {
 }
 
 void game_run(struct Game *g) {
-    init_grid(g->molecule_grid);
+    grid_reset_values(g->molecule_grid);
     while (g->is_running) {
         game_events(g);        
 
         if (!game_draw(g)) {
             g->is_running = false;
         }
-        SDL_Delay(16);
+        SDL_Delay(1);
     }
 }
 
 /*
-    if (!SDL_UpdateTexture(g->out_screen, NULL, g->pixels, PITCH)) {
-        fprintf(stderr, "Error updating texture: %s\n", SDL_GetError());
-        return 0;
-    }   
-
-    if (!SDL_RenderTexture(g->renderer, g->out_screen, NULL, NULL)) {
-        fprintf(stderr, "Error rendering texture: %s\n", SDL_GetError());
-        return 0;
-    }
+    
 */

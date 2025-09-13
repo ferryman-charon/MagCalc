@@ -21,6 +21,10 @@
 
 #define CELL_SIZE 20
 
+#define TEMPERATURE 2.5
+#define CHEMICAL_POTENTIAL -2.0
+#define COHESIVE_STRENGTH 1
+
 #define SDL_COLOR_TO_ARGB32(col) \
     ( ((Uint32)(col).a << 24) | ((Uint32)(col).r << 16) | ((Uint32)(col).g << 8) | ((Uint32)(col).b) )
 

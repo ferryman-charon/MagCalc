@@ -119,13 +119,13 @@ bool game_draw_grid(struct Game *g) {
         }
 
     } else {
-        SDL_SetRenderDrawColor(g->renderer, COLOR_WHITE.r, COLOR_WHITE.g, COLOR_WHITE.b, COLOR_WHITE.a);
+        SDL_SetRenderDrawColor(g->renderer, COLOR_RED.r, COLOR_RED.g, COLOR_RED.b, COLOR_RED.a);
         SDL_RenderClear(g->renderer);
 
         SDL_SetRenderDrawColor(g->renderer, COLOR_BLUE.r, COLOR_BLUE.g, COLOR_BLUE.b, COLOR_BLUE.a);
         for (int y = 0; y < GRID_HEIGHT; y++) {
             for (int x = 0; x < GRID_WIDTH; x++) {
-                if (g->molecule_grid->grid[y*GRID_WIDTH + x]) {
+                if (g->molecule_grid->grid[y*GRID_WIDTH + x] == 1) {
                     const SDL_FRect rect = {x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE};
                     SDL_RenderFillRect(g->renderer, &rect);
                 }
@@ -143,7 +143,7 @@ bool game_draw(struct Game *g) {
         return 0;
     }
     
-    //update_grid(g->molecule_grid);
+    update_grid(g->molecule_grid);
     game_draw_grid(g);
     
     if (!SDL_RenderPresent(g->renderer)) {

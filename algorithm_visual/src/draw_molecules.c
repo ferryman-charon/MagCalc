@@ -1,148 +1,105 @@
 #include "draw_molecules.h"
 
-int get_deltaE(const Molecules *m, int index);
-size_t get_grid_energy(const Molecules *m);
-double get_physical_energy(const Molecules *m);
+double get_deltaE(const Spins *s, int i);
+double get_total_energy(const Spins *s);
 
-bool grid_new(Molecules **molecules) {
-    *molecules = calloc(1, sizeof(Molecules));
+bool grid_new(Spins **spins) {
+    *spins = calloc(1, sizeof(Spins));
 
-    if (*molecules == NULL) {
-        fprintf(stderr, "Failed creating molecules!\n");
+    if (*spins == NULL) {
+        fprintf(stderr, "Failed creating spins!\n");
         return false;
     }
-    Molecules *m = *molecules;
+    Spins *s = *spins;
     
 
-    m->grid = calloc(GRID_HEIGHT*GRID_WIDTH, sizeof(bool));
-    if (!m->grid) {
-        free(m);
-        *molecules = NULL;
-        fprintf(stderr, "Error allocating memory for calc grid: %s\n", SDL_GetError());
-        return false;
-    }
-    
-    m->seen = calloc(GRID_HEIGHT*GRID_WIDTH, sizeof(bool));
-    if (!m->seen) {
-        free(m->grid);
-        m->grid = NULL;
-
-        free(m);
-        *molecules = NULL;
+    s->grid = calloc(GRID_HEIGHT*GRID_WIDTH, sizeof(int));
+    if (!s->grid) {
+        free(s);
+        *spins = NULL;
         fprintf(stderr, "Error allocating memory for calc grid: %s\n", SDL_GetError());
         return false;
     }
 
-    m->h = GRID_HEIGHT;
-    m->w = GRID_WIDTH;
-    m->size = GRID_HEIGHT * GRID_WIDTH;
+    s->h = GRID_HEIGHT;
+    s->w = GRID_WIDTH;
+    s->size = GRID_HEIGHT * GRID_WIDTH;
     
-    m->Temperature = TEMPERATURE;
-    m->mu = CHEMICAL_POTENTIAL;
-    m->J = COHESIVE_STRENGTH;
+    s->Temperature = TEMPERATURE;
+    s->J = COHESIVE_STRENGTH;
 
     return true;
 
 }
-void grid_free(Molecules **molecules) {
-    if (*molecules) {
-        Molecules *m = *molecules;
+void grid_free(Spins **spins) {
+    if (*spins) {
+        Spins *s = *spins;
 
-        if (m->seen) {
-            free(m->seen);
-            m->seen = NULL;
+        if (s->grid) {
+            free(s->grid);
+            s->grid = NULL;
         }
 
-        if (m->grid) {
-            free(m->grid);
-            m->grid = NULL;
-        }
-
-        free(m);
-        *molecules = NULL;
+        free(s);
+        *spins = NULL;
     }
 }
 
-void grid_reset_values(Molecules *m) {
-    for (size_t i = 0; i < (m->size); i++) {
-        m->grid[i] = (bool)(rand()%4 == 1);
+void grid_reset_values(Spins *s) {
+    for (size_t i = 0; i < (s->size); i++) {
+        if (rand()%4 == 1)
+            s->grid[i] = 1;
+        else
+            s->grid[i] = -1;
     }
-    m->energy = get_physical_energy(m);
+    s->energy = get_total_energy(s);
 }
 
-void update_grid(Molecules *m) {
-    size_t i = rand() % m->size;
-    double dE = get_deltaE(m, i);
+void update_grid(Spins *s) {
+    int i = rand() % s->size;
+    double dE = get_deltaE(s, i);
 
-    printf("%f\n", m->energy);
-    // always accecpt downhill?
+    printf("%f\n", s->energy);
     if (dE <= 0.0) {
-        m->grid[i] ^= true;
-        m->energy += dE;
+        s->grid[i] *= - 1;
+        s->energy += dE;
     } else {
         double u = (double)rand() / (double)RAND_MAX;
-        double boltz = exp(-dE / m->Temperature);
+        double boltz = exp(-dE / s->Temperature);
         if (u < boltz) {
-            m->grid[i] ^= true;
-            m->energy += dE;
+            s->grid[i] *= -1;
+            s->energy += dE;
         }
     }
 }
 
-int get_deltaE(const Molecules *m, int i) {
-    int x = i % m->w;
-    int y = i / m->w;
-    int num_n = 0;
-
-    if (x > 0 && m->grid[i-1]) {
-        num_n++;
-    }
-    
-    if (x < m->w-1 && m->grid[i+1]) {
-        num_n++;
-    } 
-    
-    if (y > 0 && m->grid[i-m->w]) {
-        num_n++;
-    }
-    if (y < m->h-1 && m->grid[i+m->w]) {
-        num_n++;
-    }
-
-    if (m->grid[i]) {
-        return +m->J * num_n + m->mu;
-    } else {
-        return -m->J * num_n - m->mu;
-    }
-}
-
-// you dont need to keep track of seen! can just count only right and down!
-size_t get_grid_energy(const Molecules *m) {
-    size_t num_n = 0;
-
-    for (int y = 0; y < m->h; y++) {
-        for (int x = 0; x < m->w; x++) {
-            int i = y * m->w + x;
-            if (!m->grid[i]) continue;
-
-            if (x < m->w - 1 && m->grid[i+1])
-                num_n++;  
-
-            if (y < m->h - 1 && m->grid[i+m->w])
-                num_n++;  
+double get_total_energy(const Spins *s) {
+    double E = 0.0;
+    for (int y = 0; y < s->h; y++) {
+        for (int x = 0; x < s->w; x++) {
+            int i = y * s->w + x;
+            int sigma = s->grid[i];
+            if (x < s->w - 1)
+                E -= s->J * sigma * s->grid[i + 1];
+            if (y < s->h - 1)
+                E -= s->J * sigma * s->grid[i + s->w];
         }
     }
-
-    return num_n;  
+    return E;
 }
 
-double get_physical_energy(const Molecules *m) {
-    size_t num_n = get_grid_energy(m);
+double get_deltaE(const Spins *s, int i) {
 
-    size_t occupied = 0;
-    for (size_t i = 0; i < m->size; i++) {
-        if (m->grid[i]) occupied++;
-    }
+    int x = i % s->w;
+    int y = i / s->w;
+    int sigma = s->grid[i];
 
-    return -m->J * (double)num_n - m->mu * (double)occupied;
+    int sum_neighbors = 0;
+    if (x > 0) sum_neighbors += s->grid[i - 1];
+    if (x < s->w - 1) sum_neighbors += s->grid[i + 1];
+    if (y > 0) sum_neighbors += s->grid[i - s->w];
+    if (y < s->h - 1) sum_neighbors += s->grid[i + s->w];
+
+    double dE = 2.0 * s->J * sigma * sum_neighbors;
+    return dE;
 }

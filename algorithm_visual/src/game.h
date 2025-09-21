@@ -12,7 +12,7 @@ struct Game {
         SDL_Texture *out_screen;
         SDL_Event event;
         bool is_running;
-        Molecules *molecule_grid;
+        Spins *molecule_grid;
         uint32_t *pixels;
 };
 
